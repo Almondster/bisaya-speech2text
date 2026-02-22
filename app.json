@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "speech2text-fresh",
-    "slug": "speech2text-fresh",
+    "name": "Bisaya Voice",
+    "slug": "bisaya-voice",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,21 +10,45 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#FAFBFF"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.bisayavoice.app",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Bisaya Voice needs access to your microphone to convert your speech into text.",
+        "NSSpeechRecognitionUsageDescription": "Bisaya Voice uses speech recognition to transcribe your speech into text."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#FAFBFF"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.bisayavoice.app",
+      "permissions": [
+        "RECORD_AUDIO",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Bisaya Voice needs access to your microphone to convert your speech into text.",
+          "speechRecognitionPermission": "Bisaya Voice uses speech recognition to transcribe your speech into text."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "1a13f035-801b-4016-9afb-ba4ad7d2c9b3"
+      }
     }
   }
 }
