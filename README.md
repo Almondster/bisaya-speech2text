@@ -1,11 +1,7 @@
-<p align="center">
-  <img src="assets/icon.png" alt="Bisaya Voice" width="100" height="100" style="border-radius: 20px;" />
-</p>
-
-<h1 align="center">🇵🇭 Bisaya Voice</h1>
+<h1 align="center">Bisaya Speech-to-Text</h1>
 
 <p align="center">
-  <strong>Real-time Cebuano (Bisaya) speech-to-text — powered by cloud recognition</strong>
+  <strong>Real-time Cebuano (Bisaya) speech-to-text, powered by cloud recognition</strong>
 </p>
 
 <p align="center">
