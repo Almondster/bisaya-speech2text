@@ -3,7 +3,6 @@ import {
   ExpoSpeechRecognitionModule,
   useSpeechRecognitionEvent,
 } from 'expo-speech-recognition';
-import { Platform } from 'react-native';
 
 export interface SpeechRecognitionState {
   isListening: boolean;
@@ -11,6 +10,8 @@ export interface SpeechRecognitionState {
   interimTranscript: string;
   error: string | null;
   isAvailable: boolean;
+  /** The locale currently being used for recognition */
+  activeLocale: string;
 }
 
 export interface SpeechRecognitionActions {
@@ -19,8 +20,12 @@ export interface SpeechRecognitionActions {
   clearTranscript: () => void;
 }
 
-// Cebuano locale codes to try in order of preference
-const CEBUANO_LOCALES = ['ceb-PH', 'ceb', 'fil-PH', 'fil'];
+// Try Cebuano first, fall back to Filipino (Tagalog) — NEVER English.
+const LOCALE_PRIORITY = ['ceb-PH', 'ceb', 'fil-PH', 'fil'] as const;
+
+function normalizeLocale(tag: string): string {
+  return tag.replace(/_/g, '-').toLowerCase();
+}
 
 export function useSpeechRecognition(): SpeechRecognitionState & SpeechRecognitionActions {
   const [isListening, setIsListening] = useState(false);
@@ -28,39 +33,56 @@ export function useSpeechRecognition(): SpeechRecognitionState & SpeechRecogniti
   const [interimTranscript, setInterimTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isAvailable, setIsAvailable] = useState(false);
-  const selectedLocale = useRef<string>(CEBUANO_LOCALES[0]);
+  const [activeLocale, setActiveLocale] = useState<string>(LOCALE_PRIORITY[0]);
+  const resolvedLocale = useRef<string>(LOCALE_PRIORITY[0]);
 
   useEffect(() => {
-    checkAvailability();
-  }, []);
-
-  const checkAvailability = async () => {
-    try {
-      const result = await ExpoSpeechRecognitionModule.getStateAsync();
-      setIsAvailable(result === 'inactive' || result === 'recognizing');
-
-      // Try to find the best supported Cebuano locale
+    (async () => {
       try {
-        const supportedLocales =
-          await ExpoSpeechRecognitionModule.getSupportedLocales({});
-        const locales = supportedLocales.locales.map((l: string) =>
-          l.toLowerCase()
-        );
+        const result = await ExpoSpeechRecognitionModule.getStateAsync();
+        setIsAvailable(result === 'inactive' || result === 'recognizing');
 
-        for (const locale of CEBUANO_LOCALES) {
-          if (locales.includes(locale.toLowerCase())) {
-            selectedLocale.current = locale;
-            break;
+        // Find the best available locale from our priority list
+        try {
+          const supportedLocales =
+            await ExpoSpeechRecognitionModule.getSupportedLocales({});
+          const normalized = supportedLocales.locales.map(normalizeLocale);
+
+          for (const locale of LOCALE_PRIORITY) {
+            if (normalized.includes(normalizeLocale(locale))) {
+              resolvedLocale.current = locale;
+              setActiveLocale(locale);
+              break;
+            }
           }
+
+          // Also check partial match for 'ceb' or 'fil'
+          if (!LOCALE_PRIORITY.some((l) => normalized.includes(normalizeLocale(l)))) {
+            const cebMatch = supportedLocales.locales.find((l: string) =>
+              normalizeLocale(l).startsWith('ceb')
+            );
+            if (cebMatch) {
+              resolvedLocale.current = cebMatch;
+              setActiveLocale(cebMatch);
+            } else {
+              const filMatch = supportedLocales.locales.find((l: string) =>
+                normalizeLocale(l).startsWith('fil')
+              );
+              if (filMatch) {
+                resolvedLocale.current = filMatch;
+                setActiveLocale(filMatch);
+              }
+              // If neither ceb nor fil found, keep ceb-PH and let cloud handle it
+            }
+          }
+        } catch {
+          // Can't query locales — keep default
         }
       } catch {
-        // Default to ceb-PH if we can't check
-        selectedLocale.current = 'ceb-PH';
+        setIsAvailable(false);
       }
-    } catch {
-      setIsAvailable(false);
-    }
-  };
+    })();
+  }, []);
 
   // Handle speech recognition results
   useSpeechRecognitionEvent('result', (event) => {
@@ -106,7 +128,6 @@ export function useSpeechRecognition(): SpeechRecognitionState & SpeechRecogniti
     try {
       setError(null);
 
-      // Request permissions first
       const { granted } =
         await ExpoSpeechRecognitionModule.requestPermissionsAsync();
       if (!granted) {
@@ -115,11 +136,12 @@ export function useSpeechRecognition(): SpeechRecognitionState & SpeechRecogniti
       }
 
       ExpoSpeechRecognitionModule.start({
-        lang: selectedLocale.current,
+        lang: resolvedLocale.current,
         interimResults: true,
         continuous: true,
         maxAlternatives: 1,
         requiresOnDeviceRecognition: false,
+        addsPunctuation: true,
       });
     } catch (err: any) {
       setError(err.message || 'Failed to start speech recognition.');
@@ -147,6 +169,7 @@ export function useSpeechRecognition(): SpeechRecognitionState & SpeechRecogniti
     interimTranscript,
     error,
     isAvailable,
+    activeLocale,
     startListening,
     stopListening,
     clearTranscript,
@@ -162,7 +185,7 @@ function getErrorMessage(errorCode: string): string {
     case 'audio-capture':
       return 'No microphone was found. Please check your device.';
     case 'language-not-supported':
-      return 'Cebuano may not be fully supported on this device.';
+      return 'Cebuano/Filipino speech recognition is not available. Please check your internet connection.';
     case 'service-not-allowed':
       return 'Speech recognition service is not available.';
     case 'busy':

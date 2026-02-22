@@ -1,16 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   Share,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { COLORS, SPACING, FONT_SIZE, BORDER_RADIUS } from '../constants/theme';
+import { MinimalModal } from './MinimalModal';
 
 interface ActionBarProps {
   transcript: string;
@@ -24,11 +24,13 @@ export const ActionBar: React.FC<ActionBarProps> = ({
   isListening,
 }) => {
   const hasText = transcript.length > 0;
+  const [showCopied, setShowCopied] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const handleCopy = async () => {
     if (!hasText) return;
     await Clipboard.setStringAsync(transcript);
-    Alert.alert('Copied!', 'Text has been copied to your clipboard.');
+    setShowCopied(true);
   };
 
   const handleShare = async () => {
@@ -45,14 +47,7 @@ export const ActionBar: React.FC<ActionBarProps> = ({
 
   const handleClear = () => {
     if (!hasText && !isListening) return;
-    Alert.alert(
-      'Clear Transcript',
-      'Are you sure you want to clear all text?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Clear', style: 'destructive', onPress: onClear },
-      ]
-    );
+    setShowClearConfirm(true);
   };
 
   return (
@@ -75,6 +70,25 @@ export const ActionBar: React.FC<ActionBarProps> = ({
         onPress={handleClear}
         disabled={!hasText && !isListening}
         destructive
+      />
+
+      <MinimalModal
+        visible={showCopied}
+        title="Copied!"
+        message="Text has been copied to your clipboard."
+        buttons={[{ label: 'OK', onPress: () => {} }]}
+        onDismiss={() => setShowCopied(false)}
+      />
+
+      <MinimalModal
+        visible={showClearConfirm}
+        title="Clear Transcript"
+        message="Are you sure you want to clear all text?"
+        buttons={[
+          { label: 'Cancel', onPress: () => {} },
+          { label: 'Clear', onPress: onClear, destructive: true },
+        ]}
+        onDismiss={() => setShowClearConfirm(false)}
       />
     </View>
   );

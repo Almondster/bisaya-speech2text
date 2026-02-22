@@ -43,7 +43,8 @@
           "microphonePermission": "Bisaya Voice needs access to your microphone to convert your speech into text.",
           "speechRecognitionPermission": "Bisaya Voice uses speech recognition to transcribe your speech into text."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "extra": {
       "eas": {

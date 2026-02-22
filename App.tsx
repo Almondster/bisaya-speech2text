@@ -23,10 +23,14 @@ export default function App() {
     interimTranscript,
     error,
     isAvailable,
+    activeLocale,
     startListening,
     stopListening,
     clearTranscript,
   } = useSpeechRecognition();
+
+  const localeName = activeLocale.startsWith('ceb') ? 'Cebuano' :
+    activeLocale.startsWith('fil') ? 'Filipino' : 'Cebuano';
 
   const handleToggleListening = useCallback(async () => {
     try {
@@ -56,8 +60,8 @@ export default function App() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Bisaya Voice</Text>
-          <Text style={styles.subtitle}>Speech to Text — Cebuano</Text>
+          <Text style={styles.title}>Bisaya</Text>
+          <Text style={styles.subtitle}>Speech-to-Text</Text>
         </View>
 
         {/* Transcript Area */}
@@ -98,7 +102,7 @@ export default function App() {
         {/* Footer Language Badge */}
         <View style={styles.footer}>
           <View style={styles.languageBadge}>
-            <Text style={styles.languageBadgeText}>🇵🇭 Cebuano / Bisaya</Text>
+            <Text style={styles.languageBadgeText}>🇵🇭 {localeName}</Text>
           </View>
         </View>
       </KeyboardAvoidingView>
